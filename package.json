@@ -1,6 +1,5 @@
 {
-  "name": "@examples/trpc-next-prisma-starter",
-  "version": "10.7.0",
+  "name": "publith",
   "private": true,
   "scripts": {
     "migrate-sqlite": "prisma migrate dev --name init --schema=./prisma/_sqlite/schema.prisma",
