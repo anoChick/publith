@@ -4,8 +4,9 @@ import { inferProcedureInput } from '@trpc/server';
 import Link from 'next/link';
 import { Fragment } from 'react';
 import type { AppRouter } from '~/server/routers/_app';
+import { signIn } from 'next-auth/react';
 
-const IndexPage: NextPageWithLayout = () => {
+const IndexPage: NextPageWithLayout = (props) => {
   const utils = trpc.useContext();
   const postsQuery = trpc.post.list.useInfiniteQuery(
     {
@@ -78,7 +79,6 @@ const IndexPage: NextPageWithLayout = () => {
       <hr />
 
       <h3>Add a Post</h3>
-
       <form
         onSubmit={async (e) => {
           /**
