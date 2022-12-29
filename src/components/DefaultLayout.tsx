@@ -7,7 +7,7 @@ export const DefaultLayout = ({ children }: DefaultLayoutProps) => {
   return (
     <>
       <Head>
-        <title>Prisma Starter</title>
+        <title>簡単画像生成アプリ Pablith</title>
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
