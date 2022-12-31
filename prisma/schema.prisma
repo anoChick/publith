@@ -56,6 +56,8 @@ model User {
   image         String?
   accounts      Account[]
   sessions      Session[]
+
+  templates Template[]
 }
 
 model VerificationToken {
@@ -64,4 +66,16 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Template {
+  id           String @id @default(cuid())
+  title        String
+  html         String @db.Text
+  fields       Json
+  countCreated Int    @default(0)
+  userId       String
+  user         User   @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }

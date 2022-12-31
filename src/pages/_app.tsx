@@ -5,6 +5,10 @@ import { DefaultLayout } from '~/components/DefaultLayout';
 import { trpc } from '~/utils/trpc';
 import { SessionProvider } from 'next-auth/react';
 import { TopNav } from '~/components/organisms/TopNav';
+import 'react-toastify/dist/ReactToastify.css';
+
+import './global.css';
+import { ToastContainer } from 'react-toastify';
 
 export type NextPageWithLayout<
   TProps = Record<string, unknown>,
@@ -31,6 +35,7 @@ const MyApp = (({ Component, pageProps }: AppPropsWithLayout) => {
           <Component {...pageProps} />
         </div>
       </div>
+      <ToastContainer />
     </SessionProvider>,
   );
 }) as AppType;
