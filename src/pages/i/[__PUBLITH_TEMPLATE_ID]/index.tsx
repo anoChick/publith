@@ -38,7 +38,7 @@ export const getServerSideProps = async ({
   const pngData = resvg.render();
   const pngBuffer = pngData.asPng();
   res.statusCode = 200;
-  res.setHeader('Cache-Control', 's-maxage=3600, stale-while-revalidate');
+  res.setHeader('Cache-Control', 's-maxage=600, stale-while-revalidate');
   res.setHeader('Content-Type', 'image/png');
   res.end(pngBuffer);
 
