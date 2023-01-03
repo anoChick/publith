@@ -1,17 +1,16 @@
 import type { NextRequest } from 'next/server';
 
 export const config = {
-  runtime: 'edge',
+  runtime: 'experimental-edge',
 };
 
 export default async function loadGoogleFont(req: NextRequest) {
   if (req.nextUrl.pathname !== '/api/font') return;
   const { searchParams, hostname } = new URL(req.url);
 
-  //   const font = searchParams.get('font');
-  //   const text = searchParams.get('text');
-  const font = 'Noto+Sans+JP';
-  const text = 'a';
+  const font = searchParams.get('font');
+  const text = searchParams.get('text');
+
   if (!font || !text) return;
 
   const API = `https://fonts.googleapis.com/css2?family=${font}&text=${encodeURIComponent(
@@ -34,7 +33,7 @@ export default async function loadGoogleFont(req: NextRequest) {
 
   if (!resource) return;
 
-  const res = await fetch(resource[1]);
+  const res = await fetch(resource[1] as any);
 
   // Make sure not to mess it around with compression when developing it locally.
   if (hostname === 'localhost') {

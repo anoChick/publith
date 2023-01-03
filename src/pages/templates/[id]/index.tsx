@@ -1,16 +1,22 @@
-import { TemplateEditor } from '~/components/organisms/TemplateEditor';
 import { NextPageWithLayout } from '../../_app';
-import {
-  InferGetStaticPropsType,
-  InferGetServerSidePropsType,
-  GetServerSideProps,
-} from 'next';
+import { InferGetServerSidePropsType, GetServerSideProps } from 'next';
 import { prisma } from '~/server/prisma';
+import { ImageGenerator } from '~/components/organisms/ImageGenerator';
 
 const Page: NextPageWithLayout = (
   props: InferGetServerSidePropsType<typeof getServerSideProps>,
 ) => {
-  return <div>s </div>;
+  const { template } = JSON.parse(
+    props?.data ?? JSON.stringify({ template: null }),
+  );
+
+  if (!template) return <div></div>;
+
+  return (
+    <div>
+      <ImageGenerator />
+    </div>
+  );
 };
 
 export default Page;
@@ -31,11 +37,10 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     },
   });
 
-  console.log(template);
   return {
     props: {
       data: JSON.stringify({
-        a: 2,
+        template,
       }),
     },
   };

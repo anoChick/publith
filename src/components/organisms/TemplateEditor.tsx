@@ -1,33 +1,36 @@
-import Editor, { DiffEditor, useMonaco, loader } from '@monaco-editor/react';
-import satori from 'satori';
-import { html } from 'satori-html';
+import Editor from '@monaco-editor/react';
+
 import { useEffect, useState } from 'react';
 import { Tab } from '@headlessui/react';
 import classNames from 'classnames';
 import { TemplateFieldsField } from '../molecules/TemplateFieldsField';
 import { FormProvider, useForm } from 'react-hook-form';
-import { nanoid } from 'nanoid';
-import Mustache from 'mustache';
-import { useMutation } from '@tanstack/react-query';
+
 import { trpc } from '~/utils/trpc';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/router';
+import { FieldLabel } from '../atoms/FieldLabel';
+import { TextField } from '../atoms/TextField';
+import { SelectField } from '../atoms/SelectField';
+import { render } from '~/utils/render';
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 type Props = {};
 
 export type Field = {
-  type: 'text';
+  type: 'text' | 'select';
   name: string;
   title: string;
+  options?: { title: string; value: string }[];
   description: string;
   default: string;
   sample: string;
 };
 
 export type FormType = {
-  id: string | null;
+  id: string;
   title: string;
+  publicationStatus: string;
   html: string;
   fields: Field[];
 };
@@ -40,6 +43,7 @@ export const TemplateEditor: React.FC<Props> = () => {
     defaultValues: {
       id: '',
       title: '',
+      publicationStatus: 'PRIVATE',
       html: '',
       fields: [
         {
@@ -53,7 +57,7 @@ export const TemplateEditor: React.FC<Props> = () => {
       ],
     },
   });
-  const { setValue, watch, getValues, reset } = useFormMethods;
+  const { setValue, watch, getValues, reset, register } = useFormMethods;
   trpc.template.template.useQuery(
     {
       id: `${router.query.id}`,
@@ -65,6 +69,7 @@ export const TemplateEditor: React.FC<Props> = () => {
         reset({
           id: template.id,
           title: template.title,
+          publicationStatus: template.publicationStatus,
           html: template.html,
           fields: template.fields as any,
         });
@@ -95,23 +100,8 @@ export const TemplateEditor: React.FC<Props> = () => {
     fields.forEach((field) => {
       sampleData[field.name] = field.sample;
     });
-
-    const res = await fetch('/fonts/BIZUDPGothic-Bold.ttf');
-    const data = await res.arrayBuffer();
-    const a = html(Mustache.render(htmlValue, sampleData));
-    const s = await satori(a as any, {
-      width: 600,
-      height: 400,
-      fonts: [
-        {
-          name: 'Inter',
-          data: data,
-          weight: 700,
-          style: 'normal',
-        },
-      ],
-    });
-    setSvg(s);
+    const svg = await render(htmlValue, sampleData);
+    if (svg) setSvg(svg);
   };
 
   useEffect(() => {
@@ -121,34 +111,37 @@ export const TemplateEditor: React.FC<Props> = () => {
   const handleClickSaveButton = () => {
     const values = getValues();
     saveMutation.mutate(values);
-    console.log(values);
     toast.success('テンプレを保存しました.');
   };
   return (
     <div>
       <FormProvider {...useFormMethods}>
-        <div className="text-center flex-1 bg-black">
-          {svg && (
-            <img
-              className="previewimage inline"
-              src={`data:image/svg+xml;base64,${window.btoa(svg)}`}
-              alt="preview"
-            />
-          )}
+        <div className="text-center flex-1 gridbg">
+          <div className=" py-4">
+            {svg && (
+              <img
+                className="previewimage inline"
+                src={`data:image/svg+xml;base64,${window.btoa(svg)}`}
+                alt="preview"
+              />
+            )}
+          </div>
+
+          <div className="py-2 rounded-t-xl bg-white"></div>
         </div>
-        <div className="w-full m px-2 py-16 ">
+        <div className="w-full m px-2 ">
           <Tab.Group as="div">
-            <Tab.List className="flex w-full space-x-1 rounded-xl bg-blue-900/20 p-1">
+            <Tab.List className="flex w-full space-x-1 rounded-xl bg-orange-50 p-1">
               {tabs.map((tab) => (
                 <Tab
                   key={tab.name}
                   className={({ selected }) =>
                     classNames(
-                      'w-full rounded-lg py-2.5 text-sm font-medium leading-5 text-blue-700',
-                      'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2',
+                      'w-full rounded-lg py-2.5 text-sm font-medium leading-5 outline-0 ring-none font-bold',
+
                       selected
-                        ? 'bg-white shadow'
-                        : 'text-blue-100 hover:bg-white/[0.12] hover:text-white',
+                        ? 'bg-white text-orange-500 shadow'
+                        : 'text-orange-300 hover:bg-white/[0.12] hover:text-orange-400',
                     )
                   }
                 >
@@ -159,14 +152,8 @@ export const TemplateEditor: React.FC<Props> = () => {
 
             <div>
               <Tab.Panels className="mt-2">
-                <Tab.Panel
-                  key={'code'}
-                  className={classNames(
-                    'rounded-xl bg-white p-3',
-                    'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2',
-                  )}
-                >
-                  <div>
+                <Tab.Panel key={'code'}>
+                  <div className="my-8">
                     <Editor
                       options={{
                         minimap: {
@@ -182,34 +169,38 @@ export const TemplateEditor: React.FC<Props> = () => {
                     />
                   </div>
                 </Tab.Panel>
-                <Tab.Panel
-                  key={'fields'}
-                  className={classNames(
-                    'rounded-xl bg-white p-3',
-                    'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2',
-                  )}
-                >
+                <Tab.Panel key={'fields'}>
                   <div>
                     <TemplateFieldsField />
                   </div>
                 </Tab.Panel>
-                <Tab.Panel
-                  key={'settings'}
-                  className={classNames(
-                    'rounded-xl bg-white p-3',
-                    'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2',
-                  )}
-                >
-                  <div>aaa</div>
+                <Tab.Panel key={'settings'}>
+                  <div className="mt-8">
+                    <div className="mb-2">
+                      <FieldLabel>タイトル</FieldLabel>
+                      <TextField {...register('title')} />
+                    </div>
+                    <div className="mb-2">
+                      <FieldLabel>公開設定</FieldLabel>
+                      <SelectField
+                        options={[
+                          { title: '公開', value: 'PUBLIC' },
+                          { title: '限定公開', value: 'LIMIT' },
+                          { title: '非公開', value: 'PRIVATE' },
+                        ]}
+                        {...register('publicationStatus')}
+                      />
+                    </div>
+                  </div>
                 </Tab.Panel>
               </Tab.Panels>
             </div>
           </Tab.Group>
         </div>
-        <div className="w-full m px-2 py-16 ">
+        <div className="w-full m px-2 py-8 ">
           <button
             onClick={handleClickSaveButton}
-            className="w-full bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            className="w-full bg-orange-400 hover:bg-orange-500 text-white font-bold py-2 px-4 rounded-lg"
           >
             保存
           </button>

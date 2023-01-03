@@ -4,14 +4,24 @@ import { z } from 'zod';
 import { prisma } from '~/server/prisma';
 import { authUser } from '../utils/authUser';
 
-export type Field = {
-  type: 'text';
-  name: string;
-  title: string;
-  description: string;
-  default: string;
-  sample: string;
-};
+export type Field =
+  | {
+      type: 'text';
+      name: string;
+      title: string;
+      description: string;
+      default: string;
+      sample: string;
+    }
+  | {
+      type: 'select';
+      options: { title: string; value: string }[];
+      name: string;
+      title: string;
+      description: string;
+      default: string;
+      sample: string;
+    };
 
 export type FormType = {
   id: string | null;
@@ -42,15 +52,15 @@ export const templateRouter = router({
     return { templates };
   }),
 
-  create: publicProcedure.mutation(async ({ ctx: { session } }) => {
-    console.log('===');
-    const user = session?.user;
-    if (!user) throw new Error('');
+  create: publicProcedure.mutation(async ({ ctx }) => {
+    const user = await authUser(ctx);
 
     const template = await prisma.template.create({
       data: {
         ...defaultData,
         userId: user.id,
+        popularity: 0,
+        publicationStatus: 'PRIVATE',
       },
     });
     return {
@@ -70,11 +80,20 @@ export const templateRouter = router({
         id: z.string(),
         title: z.string().min(1).max(32),
         html: z.string().min(1).max(65534),
+        publicationStatus: z.string(),
         fields: z.array(
           z.object({
             type: z.string(),
             name: z.string(),
             title: z.string(),
+            options: z
+              .array(
+                z.object({
+                  title: z.string(),
+                  value: z.string(),
+                }),
+              )
+              .optional(),
             description: z.string(),
             default: z.string(),
             sample: z.string(),
@@ -84,7 +103,6 @@ export const templateRouter = router({
     )
     .mutation(async ({ input, ctx }) => {
       const user = await authUser(ctx);
-
       const template = await prisma.template.updateMany({
         data: input,
         where: {
